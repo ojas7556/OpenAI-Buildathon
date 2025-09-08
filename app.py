@@ -14,8 +14,8 @@ from unidecode import unidecode   # transliterate unicode -> ascii (avoids latin
 # Config
 # -----------------------
 load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o")  # YOU asked for gpt-4o
+OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+MODEL_NAME = "gpt-4o"  # YOU asked for gpt-4o
 
 if not OPENAI_API_KEY:
     st.error("Please set OPENAI_API_KEY in your .env and restart the app.")
