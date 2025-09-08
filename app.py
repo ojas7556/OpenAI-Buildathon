@@ -13,15 +13,53 @@ from unidecode import unidecode   # transliterate unicode -> ascii (avoids latin
 # -----------------------
 # Config
 # -----------------------
-load_dotenv()
-OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
-MODEL_NAME = "gpt-4o"  # YOU asked for gpt-4o
+# -------- robust startup & secrets handling (replace existing top-of-file logic) ----------
+import os
+import traceback
+
+# Optional: show full tracebacks in the app only while debugging.
+# Remove or set DEBUG=False in production.
+DEBUG = True
+
+try:
+    # Try imports that may fail on Cloud
+    from dotenv import load_dotenv
+    from openai import OpenAI
+    # If you rely on load_dotenv locally, call it
+    if os.getenv("STREAMLIT_RUNTIME") is None:  # naive check; adjust if you prefer
+        load_dotenv()
+except Exception:
+    if DEBUG:
+        st.error("Startup import error — see details below.")
+        st.text(traceback.format_exc())
+    raise
+
+# Load key: prefer Streamlit secrets (Cloud) but fall back to environment variables (local)
+OPENAI_API_KEY = None
+try:
+    OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY")  # safe .get() avoids KeyError
+except Exception:
+    # if st.secrets isn't available for any reason, ignore and fall back
+    OPENAI_API_KEY = None
 
 if not OPENAI_API_KEY:
-    st.error("Please set OPENAI_API_KEY in your .env and restart the app.")
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o")
+
+if not OPENAI_API_KEY:
+    st.error(
+        "OpenAI API key not found.\n\n"
+        "• For Streamlit Cloud: Manage app → Settings → Secrets → add:\n"
+        "    OPENAI_API_KEY = \"sk-...\"\n"
+        "• For local dev: create .streamlit/secrets.toml or set env var OPENAI_API_KEY\n\n"
+        "After adding the secret, redeploy or restart the app."
+    )
     st.stop()
 
+# create client
 client = OpenAI(api_key=OPENAI_API_KEY)
+# ---------------------------------------------------------------------------------------
 
 # -----------------------
 # DALL-E Image Generation
